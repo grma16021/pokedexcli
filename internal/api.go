@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/grma16021/pokedexcli/internal/pokecache"
 )
 
 type mapData struct {
@@ -17,24 +19,35 @@ type mapData struct {
 	} `json:"results"`
 }
 
-func FetchLocations(api string) (mapData, string, string, error) {
+type pokemon struct {
+	Name string `json:"name"`
+	url  string `json:"url"`
+}
+
+func FetchLocations(api string, cache *pokecache.Cache) (mapData, string, string, error) {
 
 	var mapDat mapData
+	var body []byte
+	if cached, ok := cache.Get(api); ok {
+		body = cached
+	} else {
 
-	//var api = "https://pokeapi.co/api/v2/location-area/"
+		resp, err := http.Get(api)
+		if err != nil {
+			return mapDat, "", "", err
+		}
+		defer resp.Body.Close()
 
-	resp, err := http.Get(api)
-	if err != nil {
-		return mapDat, "", "", err
+		body, err = io.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		cache.Add(api, body)
+
 	}
-	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	err = json.Unmarshal(body, &mapDat)
+	err := json.Unmarshal(body, &mapDat)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -54,6 +67,7 @@ func FetchLocations(api string) (mapData, string, string, error) {
 
 func FetchPreviousLocations(url string) error {
 	var mapDat mapData
+	var data []byte
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -62,7 +76,7 @@ func FetchPreviousLocations(url string) error {
 
 	defer resp.Body.Close()
 
-	data, err := io.ReadAll(resp.Body)
+	data, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}

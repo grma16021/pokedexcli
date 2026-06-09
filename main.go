@@ -5,24 +5,29 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/grma16021/pokedexcli/internal"
+	"github.com/grma16021/pokedexcli/internal/pokecache"
 )
 
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(*config) error
+	callback    func(string, *config) error
 }
 
 type config struct {
 	Next     string
 	Previous string
+	cache    *pokecache.Cache
 }
 
 var commands map[string]cliCommand
 
-var conf = &config{}
+var conf = &config{
+	cache: pokecache.NewCache(10 * time.Second),
+}
 
 var api = "https://pokeapi.co/api/v2/location-area/"
 
@@ -45,9 +50,14 @@ func main() {
 			callback:    commandMap,
 		},
 		"mapb": {
-			name:        "map",
+			name:        "mapB",
 			description: "Displays the previous 20 locations",
 			callback:    commandMapB,
+		},
+		"explore": {
+			name:        "explore",
+			description: "Displays pokemon residing in area",
+			callback:    commandExplore,
 		},
 	}
 
@@ -57,17 +67,19 @@ func main() {
 		fmt.Println("error reading input")
 	}
 
-	test := &config{}
-
 	for {
 		fmt.Print("Pokedex >")
 		scanner.Scan()
 		input := scanner.Text()
 		cleanedInput := cleanInput(input)
+		if len(cleanedInput) == 0 {
+			continue
+		}
 		command := cleanedInput[0]
+		param := cleanedInput[1]
 
 		if val, ok := commands[command]; ok {
-			val.callback(test)
+			val.callback(param, conf)
 		} else {
 			fmt.Print("Unknown command")
 		}
@@ -76,7 +88,8 @@ func main() {
 
 }
 
-func commandMapB(conf *config) error {
+func commandMapB(area string, conf *config) error {
+
 	url := conf.Previous
 
 	if url == "" {
@@ -84,14 +97,13 @@ func commandMapB(conf *config) error {
 		return fmt.Errorf("bøg")
 	}
 
-	internal.FetchPreviousLocations(conf.Previous)
+	internal.FetchLocations(conf.Previous, conf.cache)
 	return nil
 }
 
-func commandMap(conf *config) error {
-
+func commandMap(area string, conf *config) error {
 	if conf.Next == "" {
-		_, n, p, err := internal.FetchLocations(api)
+		_, n, p, err := internal.FetchLocations(api, conf.cache)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -100,7 +112,7 @@ func commandMap(conf *config) error {
 		//fmt.Printf("conf is: %v", conf.Next)
 		return nil
 	} else {
-		_, n, p, err := internal.FetchLocations(conf.Next)
+		_, n, p, err := internal.FetchLocations(conf.Next, conf.cache)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -112,7 +124,7 @@ func commandMap(conf *config) error {
 
 }
 
-func commandHelp(*config) error {
+func commandHelp(area string, conf *config) error {
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage: ")
 	fmt.Println("")
@@ -123,7 +135,7 @@ func commandHelp(*config) error {
 	return nil
 }
 
-func commandExit(*config) error {
+func commandExit(area string, conf *config) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
@@ -131,11 +143,13 @@ func commandExit(*config) error {
 }
 
 func cleanInput(text string) []string {
+
 	var words []string
 	word := ""
 
 	cleanedSpaces := strings.TrimSpace(text)
 	formatedText := strings.ToLower(cleanedSpaces)
+
 	for i := 0; i < len(formatedText); i++ {
 		char := formatedText[i]
 
@@ -150,4 +164,8 @@ func cleanInput(text string) []string {
 		words = append(words, word)
 	}
 	return words
+}
+
+func commandExplore(areaName string, conf *config) error {
+	return nil
 }
