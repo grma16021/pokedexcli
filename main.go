@@ -74,6 +74,12 @@ func main() {
 		cleanedInput := cleanInput(input)
 		if len(cleanedInput) == 0 {
 			continue
+		} else if len(cleanedInput) < 2 {
+			command := cleanedInput[0]
+			if val, ok := commands[command]; ok {
+				val.callback("", conf)
+				return
+			}
 		}
 		command := cleanedInput[0]
 		param := cleanedInput[1]
@@ -167,5 +173,9 @@ func cleanInput(text string) []string {
 }
 
 func commandExplore(areaName string, conf *config) error {
+	fmt.Println("Exploring " + areaName + "...")
+	fmt.Println("Found Pokemon:")
+
+	internal.FetchPokemonLocation(areaName, conf.cache)
 	return nil
 }

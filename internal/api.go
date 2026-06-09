@@ -19,9 +19,13 @@ type mapData struct {
 	} `json:"results"`
 }
 
-type pokemon struct {
-	Name string `json:"name"`
-	url  string `json:"url"`
+type pokemonLocationData struct {
+	PokemonEncounters []struct {
+		Pokemon struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"pokemon"`
+	} `json:"pokemon_encounters"`
 }
 
 func FetchLocations(api string, cache *pokecache.Cache) (mapData, string, string, error) {
@@ -90,4 +94,40 @@ func FetchPreviousLocations(url string) error {
 		fmt.Println(location.Name)
 	}
 	return nil
+}
+
+func FetchPokemonLocation(name string, cache *pokecache.Cache) error {
+	var pokemonLocationDat = pokemonLocationData{}
+	var body []byte
+
+	api := fmt.Sprintf("https://pokeapi.co/api/v2/location-area/%s", name)
+	if cached, ok := cache.Get(api); ok {
+		body = cached
+	} else {
+
+		res, err := http.Get(api)
+
+		if err != nil {
+			return err
+		}
+		defer res.Body.Close()
+
+		body, err = io.ReadAll(res.Body)
+		if err != nil {
+			return err
+		}
+		cache.Add(api, body)
+	}
+
+	err := json.Unmarshal(body, &pokemonLocationDat)
+	if err != nil {
+		return err
+	}
+
+	for _, name := range pokemonLocationDat.PokemonEncounters {
+		fmt.Println("- " + name.Pokemon.Name)
+	}
+
+	return nil
+
 }
