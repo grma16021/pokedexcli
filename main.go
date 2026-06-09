@@ -78,7 +78,7 @@ func main() {
 			command := cleanedInput[0]
 			if val, ok := commands[command]; ok {
 				val.callback("", conf)
-				return
+				continue
 			}
 		}
 		command := cleanedInput[0]
@@ -173,6 +173,10 @@ func cleanInput(text string) []string {
 }
 
 func commandExplore(areaName string, conf *config) error {
+	if areaName == "" {
+		fmt.Println("error you need to provide an area name")
+		return nil
+	}
 	fmt.Println("Exploring " + areaName + "...")
 	fmt.Println("Found Pokemon:")
 

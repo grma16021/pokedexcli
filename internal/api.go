@@ -62,7 +62,7 @@ func FetchLocations(api string, cache *pokecache.Cache) (mapData, string, string
 
 	prev, ok := mapDat.Previous.(string)
 	if !ok {
-		fmt.Println("error cant cast prev as string")
+		//fmt.Println("error cant cast prev as string")
 		prev = ""
 	}
 
