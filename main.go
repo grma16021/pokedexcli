@@ -66,6 +66,11 @@ func main() {
 			description: "Attempt to catch a pokemon",
 			callback:    commandCatch,
 		},
+		"inspect": {
+			name:        "inspect",
+			description: "Inspect a caught pokemon",
+			callback:    commandInspect,
+		},
 	}
 
 	scanner := bufio.NewScanner(os.Stdin)
@@ -192,7 +197,7 @@ func commandExplore(areaName string, conf *config) error {
 }
 
 func commandCatch(name string, conf *config) error {
-	p := map[string]internal.Pokemon{}
+	pokemons = make(map[string]internal.Pokemon)
 	pokemon, err := internal.FetchPokemonInfo(name, conf.cache)
 	exp := pokemon.BaseExperience
 	random := rand.Intn(exp)
@@ -202,10 +207,32 @@ func commandCatch(name string, conf *config) error {
 	fmt.Println("Throwing a Pokeball at " + name + "...")
 	if random > exp/2 {
 		fmt.Println(name + " was caught!")
-		p[name] = pokemon
+		pokemons[name] = pokemon
 	} else {
 		fmt.Println(name + " escaped!")
 	}
 
 	return nil
+}
+
+func commandInspect(name string, conf *config) error {
+
+	pokemon, exists := pokemons[name]
+	if !exists {
+		fmt.Println("You have not caught " + name)
+	}
+
+	fmt.Println("Name: " + pokemon.Name)
+	fmt.Println("Height: ", +pokemon.Height)
+	fmt.Println("Weight: ", +pokemon.Weight)
+	fmt.Println("Stats:")
+	for _, stat := range pokemon.Stats {
+		fmt.Printf("  -%s: %d \n", stat.Stat.Name, stat.BaseStat)
+	}
+	fmt.Println("Types:")
+	for _, t := range pokemon.Types {
+		fmt.Printf("  - %s \n", t.Type.Name)
+	}
+	return nil
+
 }
