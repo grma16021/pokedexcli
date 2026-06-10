@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"math/rand"
+
 	"github.com/grma16021/pokedexcli/internal"
 	"github.com/grma16021/pokedexcli/internal/pokecache"
 )
@@ -24,7 +26,7 @@ type config struct {
 }
 
 var commands map[string]cliCommand
-
+var pokemons map[string]internal.Pokemon
 var conf = &config{
 	cache: pokecache.NewCache(10 * time.Second),
 }
@@ -58,6 +60,11 @@ func main() {
 			name:        "explore",
 			description: "Displays pokemon residing in area",
 			callback:    commandExplore,
+		},
+		"catch": {
+			name:        "catch",
+			description: "Attempt to catch a pokemon",
+			callback:    commandCatch,
 		},
 	}
 
@@ -181,5 +188,24 @@ func commandExplore(areaName string, conf *config) error {
 	fmt.Println("Found Pokemon:")
 
 	internal.FetchPokemonLocation(areaName, conf.cache)
+	return nil
+}
+
+func commandCatch(name string, conf *config) error {
+	p := map[string]internal.Pokemon{}
+	pokemon, err := internal.FetchPokemonInfo(name, conf.cache)
+	exp := pokemon.BaseExperience
+	random := rand.Intn(exp)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("Throwing a Pokeball at " + name + "...")
+	if random > exp/2 {
+		fmt.Println(name + " was caught!")
+		p[name] = pokemon
+	} else {
+		fmt.Println(name + " escaped!")
+	}
+
 	return nil
 }

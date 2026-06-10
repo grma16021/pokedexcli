@@ -131,3 +131,33 @@ func FetchPokemonLocation(name string, cache *pokecache.Cache) error {
 	return nil
 
 }
+
+func FetchPokemonInfo(name string, cache *pokecache.Cache) (Pokemon, error) {
+	var Pmon = Pokemon{}
+	var body []byte
+
+	api := fmt.Sprintf("https://pokeapi.co/api/v2/pokemon/%s", name)
+	if cached, ok := cache.Get(api); ok {
+		body = cached
+	} else {
+		res, err := http.Get(api)
+		if err != nil {
+			return Pokemon{}, err
+		}
+		defer res.Body.Close()
+
+		body, err = io.ReadAll(res.Body)
+		if err != nil {
+			return Pokemon{}, err
+		}
+
+		cache.Add(api, body)
+	}
+
+	err := json.Unmarshal(body, &Pmon)
+	if err != nil {
+		return Pokemon{}, err
+	}
+
+	return Pmon, nil
+}
