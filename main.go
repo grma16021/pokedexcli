@@ -26,7 +26,8 @@ type config struct {
 }
 
 var commands map[string]cliCommand
-var pokemons map[string]internal.Pokemon
+var pokemons = make(map[string]internal.Pokemon)
+
 var conf = &config{
 	cache: pokecache.NewCache(10 * time.Second),
 }
@@ -70,6 +71,11 @@ func main() {
 			name:        "inspect",
 			description: "Inspect a caught pokemon",
 			callback:    commandInspect,
+		},
+		"pokedex": {
+			name:        "pokedex",
+			description: "Lists all caught pokemon",
+			callback:    commandPokedex,
 		},
 	}
 
@@ -197,7 +203,6 @@ func commandExplore(areaName string, conf *config) error {
 }
 
 func commandCatch(name string, conf *config) error {
-	pokemons = make(map[string]internal.Pokemon)
 	pokemon, err := internal.FetchPokemonInfo(name, conf.cache)
 	exp := pokemon.BaseExperience
 	random := rand.Intn(exp)
@@ -208,6 +213,7 @@ func commandCatch(name string, conf *config) error {
 	if random > exp/2 {
 		fmt.Println(name + " was caught!")
 		pokemons[name] = pokemon
+		fmt.Println("len of map:", +len(pokemons))
 	} else {
 		fmt.Println(name + " escaped!")
 	}
@@ -220,6 +226,7 @@ func commandInspect(name string, conf *config) error {
 	pokemon, exists := pokemons[name]
 	if !exists {
 		fmt.Println("You have not caught " + name)
+		return nil
 	}
 
 	fmt.Println("Name: " + pokemon.Name)
@@ -235,4 +242,18 @@ func commandInspect(name string, conf *config) error {
 	}
 	return nil
 
+}
+
+func commandPokedex(name string, conf *config) error {
+
+	fmt.Println("Your Pokedex:")
+	if len(pokemons) == 0 {
+		fmt.Println("you have yet to catch any pokemon")
+	}
+
+	for name, _ := range pokemons {
+		fmt.Println("  - " + name)
+	}
+
+	return nil
 }
