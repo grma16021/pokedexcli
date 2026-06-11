@@ -9,6 +9,7 @@ import (
 
 	"math/rand"
 
+	"github.com/chzyer/readline"
 	"github.com/grma16021/pokedexcli/internal"
 	"github.com/grma16021/pokedexcli/internal/pokecache"
 )
@@ -79,17 +80,26 @@ func main() {
 		},
 	}
 
-	scanner := bufio.NewScanner(os.Stdin)
+	rl, err := readline.New("Pokedex > ")
+	if err != nil {
+		panic(err)
+	}
+	defer rl.Close()
 
+	scanner := bufio.NewScanner(os.Stdin)
 	if err := scanner.Err(); err != nil {
 		fmt.Println("error reading input")
 	}
 
 	for {
-		fmt.Print("Pokedex >")
-		scanner.Scan()
-		input := scanner.Text()
-		cleanedInput := cleanInput(input)
+		line, err := rl.Readline()
+		if err != nil {
+			break
+		}
+		//fmt.Print("Pokedex >")
+		//scanner.Scan()
+		//input := scanner.Text()
+		cleanedInput := cleanInput(line)
 		if len(cleanedInput) == 0 {
 			continue
 		} else if len(cleanedInput) < 2 {
@@ -111,14 +121,13 @@ func main() {
 	}
 
 }
-
 func commandMapB(area string, conf *config) error {
 
 	url := conf.Previous
 
 	if url == "" {
 		fmt.Println("previous is empty")
-		return fmt.Errorf("bøg")
+		return fmt.Errorf("error in mapb")
 	}
 
 	internal.FetchLocations(conf.Previous, conf.cache)
